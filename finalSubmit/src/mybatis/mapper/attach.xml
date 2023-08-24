@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.legend.conv.attach.dao.IAttachDAO">
+		<insert id="insertAttach" parameterType="com.legend.conv.attach.vo.AttachVO">
+		INSERT INTO attach (
+		atch_no
+		,atch_parent_no
+		,atch_category
+		,atch_file_name
+		,atch_original_name
+		,atch_file_size
+		,atch_convert_size
+		,atch_content_type
+		,atch_path
+		,atch_author
+		) VALUES (
+		seq_attach.nextval
+		,#{atchParentNo}
+		,#{atchCategory}
+		,#{atchFileName}
+		,#{atchOriginalName}
+		,#{atchFileSize}
+		,#{atchConvertSize}
+		,#{atchContentType}
+		,#{atchPath}
+		,#{atchAuthor} 
+		)
+	</insert>
+
+	<select id="getAttachList" parameterType="map"
+		resultType="com.legend.conv.attach.vo.AttachVO">
+		select
+		atch_no
+		,atch_parent_no
+		,atch_category
+		,atch_file_name
+		,atch_original_name
+		,atch_file_size
+		,atch_convert_size
+		,atch_content_type
+		,atch_path
+		,atch_down_hit
+		,atch_del_yn
+		,atch_author
+		from
+		attach
+		where
+		atch_parent_no = #{atchParentNo}
+		and atch_category = #{atchCategory}
+	</select>
+
+	<select id="getAttach" parameterType="int" resultType="com.legend.conv.attach.vo.AttachVO">
+
+		select
+			atch_no
+			,atch_parent_no
+			,atch_category
+			,atch_file_name
+			,atch_original_name
+			,atch_file_size
+			,atch_convert_size
+			,atch_content_type
+			,atch_path
+			,atch_down_hit
+			,atch_del_yn
+			,atch_author
+		from
+			attach
+		where
+			atch_no = #{atchNo}
+	</select>
+
+
+<select id="getAttachNo" parameterType="map" resultType="Integer">
+    SELECT a.no
+    FROM (
+        SELECT atch_no AS no 
+        FROM attach 
+        WHERE atch_parent_no = #{boNo}
+            AND atch_category = #{atchCategory}
+        ORDER BY atch_no DESC
+    ) a
+    WHERE rownum = 1
+</select>
+
+<delete id="deleteAttaches" parameterType="map">
+	delete from attach
+	where 1=1
+	<foreach 
+		collection="delAtchNos"
+		item="atchNos"
+		open="AND atch_no IN("
+		separator=","
+		close=")"
+	>
+		#{atchNos}
+	</foreach>
+</delete>
+
+</mapper>

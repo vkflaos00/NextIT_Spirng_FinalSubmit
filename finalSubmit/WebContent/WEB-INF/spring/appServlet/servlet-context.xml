@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket-4.3.xsd
+		http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing 
+		infrastructure -->
+	
+
+	<!-- WebSocket 설정 -->
+	<websocket:handlers>
+	    <websocket:mapping path="/echo" handler="chatHandler"/> <!-- 웹소켓 핸들러 매핑 -->
+	    <websocket:handshake-interceptors>
+	        <beans:bean class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor"/> <!-- // 세션 핸드셰이크 인터셉터 -->
+	    </websocket:handshake-interceptors>
+	</websocket:handlers>
+	
+	<!-- Bean 등록 -->
+	<beans:bean id="chatHandler" class="com.legend.conv.chat.util.ConvChatHandler"/> <!-- 웹소켓 핸들러 클래스 등록 -->
+	
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<!--mvc:annotation-driven
+		사용자 요청 url을 @Controller로 보내서 처리하기 위해 필요한 HanderMapping 
+			과 HandlerAdapter를 Bean으로 등록해준다.			
+		HanderMapping : HTTP 요청정보를 이용해서 컨트롤러를 찾아주는 기능을 합니다.
+			( 즉 사용자 요청 url과 매칭되는 컨트롤러를 찾아 주는 일을 함)
+			
+		HandlerAdapter : HanderMapping을 통해서 찾은 컨트롤러를 직접 실행하는 기능을 수행합니다.
+		
+		또한 컨트롤러(@Controller)에서 @RequestMapping 과 같은 어노테이션을 통해 해당 기능을 
+			사용할수 있도록 처리해 줍니다. 	
+	  -->
+	<annotation-driven />
+	
+	
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving 
+		up static resources in the ${webappRoot}/resources directory -->
+	<!--resources는 해장 자원에대한 경로를 처리합니다. 
+		( 현재 web.xml에서 모든요청("/")을 서블릿이 처리 하므로 css, image 같은
+			서블릿이 처리 하지 않아도 되는 것에 대해서 따로 패스를 지정해주어야 합니다.   -->
+	<resources mapping="/resources/**" location="/resources/" />
+	<resources mapping="/css/**" location="/resources/css/" />
+	<resources mapping="/js/**" location="/resources/js/" />
+	<resources mapping="/lib/**" location="/resources/lib/" />
+	<resources mapping="/img/**" location="/resources/img/" />
+	<resources mapping="/mail/**" location="/resources/mail/" />
+	<resources mapping="/smarteditor2-2.8.2.3/**"
+		location="/resources/smarteditor2-2.8.2.3/" />
+
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources 
+		in the /WEB-INF/views directory -->
+	<!--InternalResourceViewResolver는 뷰리저버이며 prefix 와 suffix를 사용하여 
+		경로를 편히 작성할 수 있도록 해줍니다.ㅣ  -->
+	<beans:bean
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+	
+	<context:component-scan base-package="com.legend.conv" use-default-filters="false">
+		<context:include-filter type="annotation" 
+			expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+	<!--스프링 컨트롤러가 파일을 받을수 있도록 StandardServletMultipartResolver 등록하기 (StandardServletMultipartResolver은 
+		서블릿 3.0이상에서 동작함) -->
+	<beans:bean id="multipartResolver"
+		class="org.springframework.web.multipart.support.StandardServletMultipartResolver"/>
+</beans:beans>

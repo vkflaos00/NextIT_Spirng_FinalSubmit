@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.legend.conv.board.dao.IBoardDAO">
+	
+	
+<sql id="boardSearch">
+	<if test="searchWord != null and searchWord !=''">
+		<choose>
+			<when test='searchType=="T"'>
+				and bo_title like '%' || #{searchWord} || '%'
+			</when>
+			<when test='searchType=="W"'>
+				and b.name like '%' || #{searchWord} || '%'
+			</when>
+			<when test='searchType=="C"'>
+				and (bo_title like '%' || #{searchWord} || '%' 
+					or bo_content like '%' || #{searchWord} || '%')
+			</when>
+			<otherwise>
+				<!-- searchType이 "T", "W", "C" 중 어떤 경우도 아닐 때의 처리를 여기에 작성 -->
+				<!-- 예를 들면 기본적으로는 모든 글을 출력하도록 하거나, 기본 검색 조건 등을 추가할 수 있습니다. -->
+			</otherwise>
+		</choose>
+	</if>
+	<if test="boCate != null">
+		<choose>
+			<when test='boCate == "카테고리"'>
+				<!-- 카테고리를 선택했을 때는 조건 없이 모든 글을 출력 -->
+			</when>
+			<when test='boCate == "잡담"'>
+				and bo_cate = '잡담'
+			</when>
+			<when test='boCate == "불편사항"'>
+				and bo_cate = '불편사항'
+			</when>
+			<when test='boCate == "구인구직"'>
+				and bo_cate = '구인구직'
+			</when>
+			<otherwise>
+				<!-- boCate이 "카테고리", "잡담", "불편사항", "구인구직" 중 어떤 경우도 아닐 때의 처리를 여기에 작성 -->
+				<!-- 예를 들면 추가적인 기본 검색 조건을 설정하거나, 오류 처리 등을 추가할 수 있습니다. -->
+			</otherwise>
+		</choose>
+	</if>
+</sql>
+
+
+<sql id="rnum">
+	where RNUM between #{firstRow} and #{lastRow}
+</sql>
+	
+<select id="getBoardList" resultType="com.legend.conv.board.vo.BoardVO"
+	parameterType="com.legend.conv.common.vo.SearchVO">
+	
+SELECT *
+FROM (
+    SELECT
+        a.bo_no,
+        a.id,
+        b.name,
+        a.bo_title,
+        a.bo_cate,
+        a.bo_content,
+        TO_CHAR(a.regist_date, 'MM/DD HH24:MI') AS regist_date,
+        TO_CHAR(a.edit_date, 'MM/DD HH24:MI') AS edit_date,
+        a.hit,
+        a.del_yn,
+        a.bo_like,
+        ROW_NUMBER() OVER (ORDER BY bo_no DESC) AS rnum
+    FROM free_board a, member b
+    WHERE a.id = b.id
+    and a.del_yn = 'N'
+    <include refid="boardSearch"></include> 
+) c
+WHERE rnum BETWEEN #{firstRow} AND #{lastRow}
+
+</select>
+
+<select id="likeBoardList" parameterType="com.legend.conv.board.vo.BoardVO" resultType="com.legend.conv.board.vo.BoardVO">
+
+<![CDATA[
+SELECT *
+FROM (
+    SELECT a.bo_no
+        ,a.id
+        ,a.bo_title
+        ,a.bo_cate
+        ,a.bo_content
+        ,TO_CHAR(a.regist_date, 'MM/DD HH24:MI') AS regist_date
+        ,TO_CHAR(a.edit_date, 'MM/DD HH24:MI') AS edit_date
+        ,a.hit
+        ,a.bo_like
+        ,c.name
+        ,ROW_NUMBER() OVER (ORDER BY a.bo_like DESC) AS rn
+    FROM free_board a
+    JOIN member c ON a.id = c.id
+    WHERE a.bo_like >= 3
+) sub
+WHERE rn <= 5
+    ]]>
+
+</select>
+
+<select id="getTotalRowCount" parameterType="Map"
+	resultType="int">
+	select 
+		count(*) 		
+	from free_board 
+	where del_yn = 'N'
+		<include refid="boardSearch"></include>
+</select>
+
+	
+<insert id="writeBoard" parameterType="com.legend.conv.board.vo.BoardVO">
+
+insert into free_board(
+	bo_no
+	,id
+	,bo_title
+	,bo_cate
+	,bo_content
+	,regist_date
+	,edit_date
+	,hit
+	,bo_like
+	,del_yn
+) values(
+	#{boNo}
+	,#{id}
+	,#{boTitle}
+	,#{boCate}
+	,#{boContent}
+	,SYSDATE
+	,SYSDATE
+	,0
+	,0
+	,'N'
+)
+	
+</insert>
+
+<select id="getBoard" resultType="com.legend.conv.board.vo.BoardVO" parameterType="string">
+
+select
+    a.bo_no
+    ,a.id
+    ,a.bo_title
+    ,a.bo_cate
+    ,a.bo_content
+    ,to_char(a.regist_date, 'MM/DD HH24:MI') AS regist_date
+    ,to_char(a.edit_date, 'MM/DD HH24:MI') AS edit_date
+    ,a.hit
+    ,a.bo_like
+    ,a.del_yn
+    ,b.name
+from free_board a, member b
+where a.id = b.id
+and a.bo_no = #{boNo}
+
+</select>
+
+<update id="hitCnt">
+
+update free_board
+set hit = hit + 1
+where bo_no = #{boNo}
+
+</update>
+
+<update id="modBoard" parameterType="com.legend.conv.board.vo.BoardVO">
+
+update free_board
+set bo_title = #{boTitle}
+	,bo_cate = #{boCate}
+	,bo_content = #{boContent}
+	,edit_date = SYSDATE
+where bo_no = #{boNo}
+
+</update>
+
+<update id="delBoard" parameterType="com.legend.conv.board.vo.BoardVO">
+
+update free_board 
+set del_yn = 'Y'
+where bo_no = #{boNo}
+
+
+</update>
+
+<select id="checkAdmin" parameterType="com.legend.conv.board.vo.BoardVO"
+	resultType="int">
+	SELECT 
+		COUNT(*) 
+	FROM MEMBER 
+	WHERE ID =#{id} 
+	and ROLE='ADMIN'
+</select>
+	
+<select id="getFreeBoardKey" resultType="string">
+	<!-- SELECT seq_free_board.nextval
+	FROM DUAL -->
+SELECT LPAD ( (select count(bo_no)+1 from free_board) , 6, '0') AS bo_no 
+FROM DUAL
+</select>
+
+
+<update id="hitBoard">
+	UPDATE free_board
+	SET bo_like = bo_like +1
+	WHERE
+	bo_no = #{boNo}
+</update>
+
+<update id="hitCancelBoard">
+	UPDATE free_board
+	SET bo_like = bo_like -1
+	WHERE
+	bo_no = #{boNo}
+</update>
+
+<insert id="writeHit"
+	parameterType="com.legend.conv.board.vo.BoardVO">
+	INSERT INTO hit (
+	hit_id
+	,hit_type
+	,hit_no
+	,hit_yn
+	) VALUES (
+	#{id}
+	, 'board'
+	, #{boNo}
+	,'Y'
+	)
+</insert>
+
+<update id="editHit"
+	parameterType="com.legend.conv.board.vo.HitVO">
+	UPDATE hit
+	SET hit_yn =
+	CASE
+	WHEN hit_yn = 'Y' THEN 'N'
+	WHEN hit_yn = 'N' THEN 'Y'
+	ELSE 'N'
+	END
+	WHERE
+	hit_id = #{Id}
+</update>
+
+<select id="checkHit"
+	parameterType="com.legend.conv.member.vo.MemberVO"
+	resultType="com.legend.conv.board.vo.HitVO">
+	SELECT
+	hit_id,
+	hit_yn
+	FROM hit
+	WHERE hit_id = #{id}
+	AND hit_no = #{boNo}
+</select>
+	
+</mapper>

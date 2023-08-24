@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.legend.conv.member.dao.IMemberDAO">
+
+	<sql id="memberSearch">
+		<if test="searchWord != null and searchWord !=''">
+			<choose>
+				<when test='searchType=="NM"'>
+					and name like '%' || #{searchWord} || '%'
+				</when>
+				<when test='searchType=="ID"'>
+					and id like '%' || #{searchWord} || '%'
+				</when>
+				<when test='searchType=="HP"'>
+					and hp like '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+	</sql>
+
+	<insert id="registMember"
+		parameterType="com.legend.conv.member.vo.MemberVO">
+		INSERT INTO MEMBER(
+		id
+		, pw
+		, name
+		, address1
+		, address2
+		, hp
+		, mail
+		, mem_delyn
+		, role
+		, zip
+		, bir
+		, mem_mileage
+		)
+		VALUES(
+		#{id}
+		, #{pw}
+		, #{name}
+		, #{address1}
+		, #{address2}
+		, #{hp}
+		, #{mail}
+		, 'N'
+		, 'USER'
+		, #{zip}
+		, #{bir}
+		, '0'
+		)
+
+	</insert>
+
+	<select id="getMember" parameterType="String"
+		resultType="com.legend.conv.member.vo.MemberVO">
+		SELECT
+			id
+			, pw
+			, name
+			, zip
+			, address1
+			, address2
+			, hp
+			, mail
+			, role
+			, bir
+		FROM
+			MEMBER
+		WHERE 
+		 	id = #{id}
+	
+
+	</select>
+	
+	<select id="loginCheck" parameterType="com.legend.conv.member.vo.MemberVO" resultType="com.legend.conv.member.vo.MemberVO">
+		SELECT
+			id
+			, pw
+			, name
+			, zip
+			, address1
+			, address2
+			, hp
+			, mail
+			, role
+			, bir
+			,MEM_DELYN
+		FROM
+			MEMBER
+		WHERE 
+			id = #{id}
+			<!-- pw = #{pw}  -->
+		AND MEM_DELYN = 'N'
+	</select>
+	
+	<select id="idCheck" parameterType="String" resultType="int">
+		SELECT
+		COUNT(*)
+		FROM
+		MEMBER
+		WHERE
+		id = #{id}
+
+	</select>
+		<select id="mailCheck" parameterType="String" resultType="int">
+		SELECT
+		COUNT(*)
+		FROM
+		MEMBER
+		WHERE
+		mail = #{mail}
+
+	</select>
+	<select id="getMailAuth" parameterType="String"
+		resultType="com.legend.conv.member.vo.MailAuthVO">
+		SELECT
+		mail_add
+		, auth_key
+		, is_auth
+		FROM
+		mail_auth
+		WHERE
+		mail_add = #{mailAdd}
+	</select>
+
+	<insert id="insertMailAuth" parameterType="String">
+		INSERT INTO mail_auth
+		(
+		mail_add
+		, auth_key
+		, is_auth
+		) VALUES (
+		#{mailAdd}
+		, #{authKey}
+		, 0
+		)
+	</insert>
+
+	<update id="updateMailAuth" parameterType="String">
+		UPDATE
+		mail_auth
+		SET
+		auth_key = #{authKey}
+		, is_auth = 0
+		WHERE
+		mail_add = #{mailAdd}
+	</update>
+
+	<update id="completeAuth" parameterType="String">
+		UPDATE
+		mail_auth
+		SET
+		is_auth = 1
+		WHERE
+		mail_add = #{mailAdd}
+	</update>
+
+	<select id="checkMailAuth" parameterType="String"
+		resultType="int">
+		SELECT
+		count(*)
+		FROM
+		mail_auth
+		WHERE
+		mail_add= #{mail}
+		and is_auth = 1
+
+	</select>
+
+	<update id="editMember"
+		parameterType="com.legend.conv.member.vo.MemberVO">
+		UPDATE
+		member
+		SET
+		id = #{id}
+		, pw = #{pw}
+		, name = #{name}
+		, address1 = #{address1}
+		, address2 = #{address2}
+		, hp = #{hp}
+		, mail = #{mail}
+		, zip = #{zip}
+		, bir = #{bir}
+		WHERE
+		id = #{id}
+
+	</update>
+
+	<update id="delMember">
+		update
+		member
+		set
+		mem_delyn = 'Y'
+		WHERE
+		id = #{id}
+
+	</update>
+
+	<!-- 지역별 이용자수 뽑기 -->
+	<select id="regionChartData"
+		resultType="com.legend.conv.member.vo.AgeChartVO">
+		SELECT
+			substr(address1, 1, 2) AS address1,
+		COUNT(*) as count
+		FROM
+			member
+		GROUP BY
+			substr(address1, 1, 2)
+		ORDER BY
+			COUNT(*) desc
+	</select>
+
+	<!-- memberList 뽑기 -->
+	<select id="getMemberList"
+		parameterType="com.legend.conv.member.vo.MemberSearchVO"
+		resultType="com.legend.conv.member.vo.MemberVO">
+		select														
+		    c.*                                                     
+		from(                                                       
+		    select                                                  
+		          rownum as rnum                                    
+		          , b.*                                             
+		    from (   	 				                            
+		              SELECT                                        
+		                  id                                                   
+		                  ,name                                 
+		                  ,bir
+		                  ,address1                                  
+		                  ,address2                                                                  
+		                  ,hp                                   
+		                  ,mail     		                                                   
+		                  ,mem_mileage   	                        
+		                  ,mem_delyn
+		                  ,role
+		                  ,zip                                                         
+		              FROM member a                             
+		              WHERE a.mem_delyn='N'
+		        <include refid="memberSearch"></include>	
+		       order by bir)b                
+		order by rnum )c
+		<include refid="common.sql.rnum"></include>
+	</select>
+
+	<select id="getTotalRowCount"
+		parameterType="com.legend.conv.member.vo.MemberSearchVO"
+		resultType="int">
+		select
+		count(*)
+		from member
+		where
+		mem_delyn = 'N'
+		<include refid="memberSearch"></include>
+	</select>
+	
+<!-- 	<select id="getAtchNum" parameterType="String" resultType="int">
+		select atch_no
+		from attach
+		where atch_author = #{id}
+	</select>  -->
+	<!-- 외않되 -->
+	
+	<select id="ageChartData" resultType="com.legend.conv.member.vo.AgeChartVO">
+		<![CDATA[
+	    SELECT 
+	        CASE 
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 10 THEN '10대 미만'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 10 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 20 THEN '10대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 20 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 30 THEN '20대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 30 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 40 THEN '30대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 40 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 50 THEN '40대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 50 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 60 THEN '50대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 60 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 70 THEN '60대'
+	            ELSE '기타'
+	        END AS age,
+	        COUNT(*) AS count
+	    FROM member
+	    GROUP BY
+	        CASE 
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 10 THEN '10대 미만'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 10 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 20 THEN '10대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 20 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 30 THEN '20대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 30 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 40 THEN '30대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 40 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 50 THEN '40대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 50 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 60 THEN '50대'
+	            WHEN EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) >= 60 AND EXTRACT(YEAR FROM sysdate) - EXTRACT(YEAR FROM to_date(bir, 'YYYY-MM-DD')) < 70 THEN '60대'
+	            ELSE '기타'
+	        END
+	    ORDER BY age
+	    ]]>
+	</select>
+	
+	<!-- 회원삭제사유 및 시간 기입 -->
+	<insert id="deletionReason" parameterType="string">
+	    INSERT INTO blacklist (
+	        id
+	        ,deletion_reason
+	        ,deletion_date
+	    ) VALUES ( 
+	    #{id}
+	    ,#{deletionReason}
+	    ,SYSDATE
+	    )
+	</insert>
+	
+	<!-- 멤버테이블 삭제 유무 변경 -->
+	<update id="deleteMember" parameterType="string">
+		UPDATE member
+		SET mem_delyn = 'Y'
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

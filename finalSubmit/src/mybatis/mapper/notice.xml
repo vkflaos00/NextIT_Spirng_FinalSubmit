@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.legend.conv.notice.dao.INoticeDAO">
+<sql id="noticeSearch">
+    <if test="searchWord != null and searchWord !=''">
+        <choose>
+            <when test='searchType=="T"'>
+                and notice_title like '%' || #{searchWord} || '%'
+            </when>
+            <when test='searchType=="C"'>
+                and notice_content like '%' || #{searchWord} || '%'
+            </when>
+        </choose>
+    </if>
+    <if test="searchCategory != null and searchCategory !=''">
+        <choose>
+            <when test='searchCategory=="A"'>
+                and notice_category like '알림'
+            </when>
+            <when test='searchCategory=="E"'>
+                and notice_category like '이벤트'
+            </when>
+        </choose>
+    </if>
+</sql>
+
+	<sql id="rnum">
+		where RNUM between #{lastRow} and #{firstRow}
+	</sql>
+
+	<select id="getNoticeList"
+		parameterType="com.legend.conv.notice.vo.SearchVO"
+		resultType="com.legend.conv.notice.vo.NoticeVO">
+		SELECT
+		b.*
+		FROM(
+		SELECT
+		ROWNUM as RNUM
+		,a.*
+		FROM(
+		SELECT
+		notice_no
+		,notice_title
+		,notice_content
+		,notice_author
+		,TO_CHAR(notice_date, 'YY/MM/DD HH24:MI') as notice_date
+		,notice_hit
+		,notice_count
+		,notice_del_yn
+		,notice_category
+		FROM
+		notice
+		WHERE
+		notice_del_yn = 'N'
+		<include refid="noticeSearch"></include>
+		order by notice_no) a
+		ORDER BY RNUM DESC) b
+		<include refid="rnum"></include>
+	</select>
+
+	<select id="getTotalRowCount"
+		parameterType="com.legend.conv.notice.vo.SearchVO" resultType="int">
+		select
+		count(*)
+		from notice
+		where notice_del_yn = 'N'
+		<include refid="noticeSearch"></include>
+	</select>
+
+	<insert id="writeNotice"
+		parameterType="com.legend.conv.notice.vo.NoticeVO">
+		INSERT INTO notice (
+		notice_no
+		, notice_title
+		, notice_content
+		, notice_author
+		, notice_date
+		, notice_hit
+		, notice_count
+		, notice_del_yn
+		, notice_category
+		) VALUES (
+		 seq_notice.nextval
+		, #{noticeTitle}
+		, #{noticeContent}
+		,
+		'ADMIN'
+		, SYSDATE
+		, 0
+		, 0
+		, 'N'
+		, #{noticeCategory}
+		)
+	</insert>
+
+	<select id="getNotice"
+		resultType="com.legend.conv.notice.vo.NoticeVO">
+		SELECT
+		notice_no
+		,notice_title
+		,notice_content
+		,notice_author
+		,TO_CHAR(notice_date, 'YY/MM/DD HH24:MI') as notice_date
+		,notice_hit
+		, notice_count
+		,notice_del_yn
+		,notice_category
+		FROM notice
+		WHERE notice_no = #{noticeNo}
+	</select>
+
+	<update id="editNotice"
+		parameterType="com.legend.conv.notice.vo.NoticeVO">
+		UPDATE notice
+		SET notice_title = #{noticeTitle},
+		notice_content = #{noticeContent}
+		WHERE notice_no = #{noticeNo}
+	</update>
+
+	<update id="delNotice">
+		UPDATE notice
+		SET notice_del_yn = 'Y'
+		WHERE notice_no =
+		#{noticeNo}
+	</update>
+
+	<update id="countNotice">
+		UPDATE notice
+		SET notice_count = notice_count +1
+		WHERE
+		notice_no = #{noticeNo}
+	</update>
+
+	<update id="hitNotice">
+		UPDATE notice
+		SET notice_hit = notice_hit +1
+		WHERE
+		notice_no = #{noticeNo}
+	</update>
+
+	<update id="hitCancelNotice">
+		UPDATE notice
+		SET notice_hit = notice_hit -1
+		WHERE
+		notice_no = #{noticeNo}
+	</update>
+
+
+	<select id="getNoticeKey" resultType="int">
+	SELECT COALESCE(MAX(notice_no), 0) + 1 AS notice_no
+    FROM notice
+	</select>
+
+	<insert id="writeHit"
+		parameterType="com.legend.conv.notice.vo.NoticeVO">
+		INSERT INTO hit (
+		hit_id
+		,hit_type
+		,hit_no
+		,hit_yn
+		) VALUES (
+		#{id}
+		, 'notice'
+		, #{noticeNo}
+		,'Y'
+		)
+	</insert>
+
+	<update id="editHit"
+		parameterType="com.legend.conv.notice.vo.HitVO">
+		UPDATE hit
+		SET hit_yn =
+		CASE
+		WHEN hit_yn = 'Y' THEN 'N'
+		WHEN hit_yn = 'N' THEN 'Y'
+		ELSE 'N'
+		END
+		WHERE
+		hit_id = #{id}
+		AND hit_no = #{noticeNo}
+		AND hit_type = 'notice'
+	</update>
+
+	<select id="checkHit"
+		parameterType="com.legend.conv.member.vo.MemberVO"
+		resultType="com.legend.conv.notice.vo.HitVO">
+		SELECT
+		hit_id,
+		hit_yn
+		FROM hit
+		WHERE hit_id = #{id}
+		AND hit_no = #{noticeNo}
+	</select>
+
+</mapper>

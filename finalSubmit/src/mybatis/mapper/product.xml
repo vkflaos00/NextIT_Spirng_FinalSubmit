@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.legend.conv.product.dao.IProductDAO">
+
+	<sql id="productSearch">
+		<if test="searchWord != null and searchWord !=''">
+			and item_name like '%' || #{searchWord} || '%'	
+		</if>
+		<if test="searchStore != null and searchStore !=''">
+			and store_type like '%' || #{searchStore} || '%'	
+		</if>
+		<if test="searchCategory != null and searchCategory !=''">
+			and item_category = #{searchCategory}
+		</if>	
+		<if test="searchEvent != null and searchEvent !=''">
+			and store_event = #{searchEvent}
+		</if>	
+	</sql>
+
+	<sql id="rnum">
+		where rnum between #{firstRow} and #{lastRow}
+	</sql>
+	
+	<select id="getProductList" parameterType="com.legend.conv.product.vo.ProductSearchVO" resultType="com.legend.conv.product.vo.ProductVO">
+		SELECT
+			b.*
+		FROM(
+			SELECT 
+				rownum as rnum
+				,a.*
+			FROM (
+				SELECT
+				    item_no
+				    ,item_name
+				    ,item_price
+				    ,like_flag
+				    ,store_type
+				    ,store_event
+				    ,item_category
+				    ,to_char(update_date, 'YY/MM/DD') as update_date
+				    ,image_path
+				FROM PRODUCT
+				WHERE 1=1
+				<include refid="productSearch"></include>
+				ORDER BY item_no) a
+		ORDER BY rnum desc ) b
+		<include refid="rnum"></include> 
+	</select>
+	
+	<select id="getTotalRowCount" parameterType="com.legend.conv.product.vo.ProductSearchVO"
+		resultType="int">
+		select 
+			count(*) 		
+		from product
+		WHERE 1=1
+		<include refid="productSearch"></include>
+	</select>
+	<select id="getChatTotalRowCount" parameterType="com.legend.conv.product.vo.ProductSearchVO"
+		resultType="int">
+		select 
+			count(*) 		
+		from product
+		WHERE 1=1
+		AND chat_yn = 'Y'
+		<include refid="productSearch"></include>
+	</select>
+	
+	<select id="getProduct" resultType="com.legend.conv.product.vo.ProductVO">
+		select  				                            
+			 item_no
+		    ,item_name
+		    ,item_price
+		    ,like_flag
+		    ,store_type
+		    ,store_event
+		    ,item_category
+		    ,to_char(update_date, 'YY/MM/DD') as update_date
+		    ,image_path
+		    ,chat_yn                
+		from product                   
+		WHERE item_no = #{itemNo}
+	</select>
+	
+	<select id="similarGetProduct" resultType="com.legend.conv.product.vo.ProductVO">
+		SELECT
+		    item_no,
+		    item_name,
+		    item_price,
+		    like_flag,
+		    store_type,
+		    store_event,
+		    item_category,
+		    update_date,
+		    image_path
+		FROM product
+		WHERE item_no NOT IN #{itemNo}
+		AND item_name LIKE CONCAT(SUBSTR(#{itemName}, 1, 6), '%')
+	</select>
+	
+	<select id="getChartData" resultType="com.legend.conv.product.vo.ProductChartVO">
+		SELECT
+		    store_type
+		    ,count(store_type) as count
+		FROM product
+		GROUP BY store_type
+	</select>
+	
+	<select id="getCategoryData" resultType="com.legend.conv.product.vo.ChartCategoryVO">
+		SELECT
+		     item_category
+		    ,count(item_category) as count
+		FROM product
+		GROUP BY item_category
+	</select>
+	
+	<select id="getZzimProductList" resultType="com.legend.conv.product.vo.ProductVO">
+	    <![CDATA[
+	    SELECT a.*
+	    FROM (
+	        SELECT
+	            item_no
+	            ,item_name
+	            ,item_price
+	            ,like_flag
+	            ,store_type
+	            ,store_event
+	            ,item_category
+	            ,update_date
+	            ,image_path
+	        FROM product
+	        WHERE like_flag >= 1
+	        ORDER BY like_flag desc
+	    ) a
+	    WHERE rownum <= 10
+	    ]]>
+	</select>
+
+	
+	<update id="plusZzim" parameterType="string" >
+		UPDATE Product
+		SET like_flag = like_flag + 1
+		WHERE item_no = #{itemNo}
+	</update>
+	
+	<insert id="insertUserZzim" parameterType="string">
+		INSERT INTO user_zzim(
+		    user_id
+		    ,item_no
+		    ,zzim_yn
+		) VALUES (
+		    #{userId}
+		    ,#{itemNo}
+		    ,'Y'
+		)
+	</insert>
+	
+	<select id="getZzim" parameterType="string" resultType="com.legend.conv.common.vo.UserZzimVO">
+		SELECT
+		    user_id
+		    ,item_no
+		    ,zzim_yn
+		FROM user_zzim
+		WHERE 
+			item_no = #{itemNo}
+		AND user_id = #{userId}
+	</select>
+	
+	<delete id="cancelZzim" parameterType="string">
+		DELETE
+		FROM user_zzim
+		WHERE
+		    item_no = #{itemNo}
+		AND user_id = #{userId}
+	</delete>
+	
+	<update id="minusZzim" parameterType="string">
+		UPDATE Product
+		SET like_flag = like_flag - 1
+		WHERE item_no = #{itemNo}
+	</update>
+	
+	<select id="getProductChatList" parameterType="com.legend.conv.product.vo.ProductSearchVO" resultType="com.legend.conv.product.vo.ProductVO">
+		SELECT
+			b.*
+		FROM(
+			SELECT 
+				rownum as rnum
+				,a.*
+			FROM (
+				SELECT 
+				    a.item_no
+				    ,item_name
+				    ,item_price
+				    ,like_flag
+				    ,store_type
+				    ,store_event
+				    ,item_category
+				    ,update_date
+				    ,image_path
+				FROM product a, chatroom b
+				WHERE a.item_no = b.item_no
+				AND b.chat_yn = 'Y'
+				<include refid="productSearch"></include>
+				ORDER BY item_no) a
+		ORDER BY rnum desc ) b
+		<include refid="rnum"></include> 
+	</select>
+	
+	<!-- 채팅방오픈 -->
+	<update id="chatOpen" parameterType="string">
+		UPDATE 
+		    product
+		SET chat_yn = 'Y'
+		WHERE item_no = #{itemNo}
+	</update>
+	
+	<!-- 채팅방클로즈 -->
+	<update id="chatClose" parameterType="string">
+		UPDATE 
+		    product
+		SET chat_yn = 'N'
+		WHERE item_no = #{itemNo}
+	</update>
+	
+</mapper>

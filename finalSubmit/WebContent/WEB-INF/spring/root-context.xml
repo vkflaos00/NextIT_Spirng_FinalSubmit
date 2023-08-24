@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.3.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+
+	<!-- Oracle DB에 접속할 수 있는 URL과 계정 정보들을 알려준다. -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName"
+			value="oracle.jdbc.driver.OracleDriver"></property>
+		<property name="url"
+			value="jdbc:oracle:thin:@192.168.1.38:1521:xe"></property>
+		<property name="username" value="team"></property>
+		<property name="password" value="oracle"></property>
+	</bean>
+	
+	<!-- Mybatis 관련 설정파일 및 Dao 객체와 매핑되는 쿼리문(.xml)들의 경로를 알려준다. -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="mapperLocations" value="classpath:mybatis/mapper/*.xml" />
+		<property name="configLocation" value="classpath:mybatis/mybatis-config.xml" />
+	
+	</bean>
+	
+	
+	<!-- @Mapper 어노테이션이 붙은 Dao 객체를 스캔할 수 있도록 함 -->
+	<mybatis-spring:scan base-package="com.legend.conv" annotation="org.apache.ibatis.annotations.Mapper" />
+		
+	<util:properties id="util" location="classpath:/config/appConfig.properties"/>
+	
+	<bean id="mailSender"	class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="#{util['mail.host']}" />   
+		<property name="port" value="#{util['mail.port']}" />
+		<property name="username" value="#{util['mail.username']}" />
+		<property name="password" value="#{util['mail.password']}" />
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.transport.protocol">#{util['mail.javaMailProperties.protocol']}</prop>
+				<prop key="mail.smtp.auth">#{util['mail.javaMailProperties.auth']}</prop>
+				<prop key="mail.smtp.starttls.enable">#{util['mail.javaMailProperties.enable']}</prop>
+				<prop key="mail.debug">#{util['mail.javaMailProperties.debug']}</prop>
+				<prop key="mail.smtp.ssl.trust">#{util['mail.javaMailProperties.ssl.trust']}</prop>
+				<prop key="mail.smtp.ssl.protocols">#{util['mail.javaMailProperties.ssl.protocols']}</prop>
+			</props>
+		</property>
+		</bean>
+		<!-- 
+	파일 업로드를 위한 MutipartResolver 구현체 CommonsMultipartResolver  bean 등록 
+	-> CommonsMultipartResolver를 bean으로 등록하면
+		multipart/form-data 형식으로 요청 시  input type="file" 태그를 자동적으로 인식하여 MultipartFile 객체로 반환하고
+		파일 외의 데이터(정수, 문자열 등의 텍스트 데이터)는 기존처럼 사용 가능(MultipartRequest 필요 없음)
+	-->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		 <property name="maxUploadSize" value="104857600"/>
+		 <property name="maxUploadSizePerFile" value="104857600"/>
+		 <property name="maxInMemorySize" value="104857600"/>
+	</bean>
+	<!-- 
+		104857600 byte == 100MB
+		20971520 byte == 20MB
+		
+		maxUploadSize 
+			: 한 요청당 업로드가 허용되는 최대 용량을 바이트 단위로 설정.
+			-1 은 제한이 없다는 뜻으로 이 프로퍼티를 지정하지 않을때 기본값.
+		
+		maxUploadSizePerFile
+		 : 한 파일당 업로드가 허용되는 최대 용량을 바이트 단위로 설정.
+			-1 은 제한이 없다는 뜻으로 이 프로퍼티를 지정하지 않을때 기본값.
+			
+		maxInMemorySize 
+			: 디스크에 저장하지 않고 메모리에 유지하도록 
+			허용하는 바이트 단위의 최대 용량을 설정.
+			
+	 		사이즈가 이보다 클 경우 이 사이즈 이상의 데이터는 파일에 저장됩니다. 
+			 기본값은 10240 바이트.
+	 -->
+	 <context:component-scan base-package="com.legend.conv">
+		<context:exclude-filter type="annotation" 
+			expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+
+
+
+	 
+</beans>

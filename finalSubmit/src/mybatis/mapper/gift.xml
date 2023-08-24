@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.legend.conv.gift.dao.IGiftDAO">
+	<sql id="giftSearch">
+		<if test="searchCategory != null and searchCategory !=''">
+			<choose>
+				<when test='searchCategory=="C"'>
+					and gift_type like 'CU'
+				</when>
+				<when test='searchCategory=="G"'>
+					and gift_type like 'GS25'
+				</when>
+				<when test='searchCategory=="S"'>
+					and gift_type like '세븐일레븐'
+				</when>
+			</choose>
+		</if>
+		<if test="searchCategory2 != null and searchCategory2 !=''">
+			<choose>
+				<when test='searchCategory2=="F"'>
+					and gift_cate like '식품'
+				</when>
+				<when test='searchCategory2=="M"'>
+					and gift_cate like '모바일상품권'
+				</when>
+			</choose>
+		</if>
+		<if test="searchWord != null and searchWord !=''">
+			and gift_name like '%' || #{searchWord} || '%'
+		</if>
+	</sql>
+
+
+	<sql id="rnum">
+		where RNUM between #{lastRow} and #{firstRow}
+	</sql>
+
+	<select id="getGiftList"
+		parameterType="com.legend.conv.gift.vo.SearchVO"
+		resultType="com.legend.conv.gift.vo.GiftVO">
+		SELECT
+		b.*
+		FROM(
+		SELECT
+		ROWNUM as RNUM,
+		a.*
+		FROM(
+		SELECT
+		gift_no
+		,gift_type
+		,gift_cate
+		,gift_name
+		,gift_price
+		,gift_hit
+		,gift_src
+		,gift_detail
+		,gift_notice
+		FROM
+		gift
+		WHERE 1=1
+		<include refid="giftSearch"></include>
+		order by gift_count) a
+		ORDER BY
+		RNUM DESC) b
+		<include refid="rnum"></include>
+	</select>
+
+	<select id="getCartList"
+		parameterType="com.legend.conv.gift.vo.SearchVO"
+		resultType="com.legend.conv.gift.vo.GiftVO">
+		SELECT
+		g.gift_no,
+		g.gift_type,
+		g.gift_name,
+		g.gift_price,
+		g.gift_src,
+		g.gift_detail,
+		g.gift_notice,
+		c.cart_count
+		FROM
+		gift g
+		INNER JOIN
+		cart c ON g.gift_no = c.cart_parent_no
+		WHERE
+		c.cart_id = #{id}
+		order by cart_no DESC 
+	</select>
+	
+	<select id="getGiftList2"
+		parameterType="com.legend.conv.gift.vo.SearchVO"
+		resultType="com.legend.conv.gift.vo.GiftVO">
+		SELECT
+		b.*
+		FROM(
+		SELECT
+		ROWNUM as RNUM,
+		a.*
+		FROM(
+		SELECT
+		gift_no
+		,gift_type
+		,gift_cate
+		,gift_name
+		,gift_price
+		,gift_hit
+		,gift_src
+		,gift_detail
+		,gift_notice
+		FROM
+		gift
+		WHERE 1=1
+		<include refid="giftSearch"></include>
+		order by 6) a
+		ORDER BY
+		RNUM DESC) b
+		<include refid="rnum"></include>
+		</select>
+		
+		<select id="getGiftList3"
+		parameterType="com.legend.conv.gift.vo.SearchVO"
+		resultType="com.legend.conv.gift.vo.GiftVO">
+		SELECT
+		b.*
+		FROM(
+		SELECT
+		ROWNUM as RNUM,
+		a.*
+		FROM(
+		SELECT
+		gift_no
+		,gift_type
+		,gift_cate
+		,gift_name
+		,gift_price
+		,gift_hit
+		,gift_src
+		,gift_detail
+		,gift_notice
+		FROM
+		gift
+		WHERE 1=1
+		<include refid="giftSearch"></include>
+		order by 5 DESC) a
+		ORDER BY
+		RNUM DESC) b
+		<include refid="rnum"></include>
+		</select>
+		
+		<select id="getGiftList4"
+		parameterType="com.legend.conv.gift.vo.SearchVO"
+		resultType="com.legend.conv.gift.vo.GiftVO">
+		SELECT
+		b.*
+		FROM(
+		SELECT
+		ROWNUM as RNUM,
+		a.*
+		FROM(
+		SELECT
+		g.gift_no
+		,g.gift_type
+		,g.gift_cate
+		,g.gift_name
+		,g.gift_price
+		,g.gift_hit
+		,g.gift_src
+		,g.gift_detail
+		,g.gift_notice
+		FROM
+		gift g
+		INNER JOIN
+		hit h ON g.gift_no = h.hit_no
+		WHERE h.hit_id = #{id}
+		AND h.hit_yn = 'Y'
+		and h.hit_type = 'gift'
+		<include refid="giftSearch"></include>
+		order by 1) a
+		ORDER BY
+		RNUM DESC) b
+		<include refid="rnum"></include>
+</select>
+
+	<select id="getTotalRowCount"
+		parameterType="com.legend.conv.gift.vo.SearchVO" resultType="int">
+		select
+		count(*)
+		from gift
+		where 1= 1
+		<include refid="giftSearch"></include>
+	</select>
+	
+	<select id="getTotalRowCount4"
+		parameterType="com.legend.conv.gift.vo.SearchVO" resultType="int">
+		select
+		count(*)
+		from gift g
+		INNER JOIN
+		hit h ON g.gift_no = h.hit_no
+		WHERE h.hit_id = #{id}
+		AND h.hit_yn = 'Y'
+		and h.hit_type = 'gift'
+		<include refid="giftSearch"></include>
+	</select>
+
+	<select id="getTotalRowCountCart"
+		parameterType="com.legend.conv.gift.vo.SearchVO" resultType="int">
+		select
+		count(*)
+		from cart
+	</select>
+
+	<update id="hitGift">
+		UPDATE gift
+		SET gift_hit = gift_hit +1
+		WHERE
+		gift_no =
+		#{giftNo}
+	</update>
+
+	<update id="hitCancelGift">
+		UPDATE gift
+		SET gift_hit = gift_hit -1
+		WHERE
+		gift_no =
+		#{giftNo}
+	</update>
+
+	<insert id="writeHit"
+		parameterType="com.legend.conv.gift.vo.GiftVO">
+		INSERT INTO hit (
+		hit_id
+		,hit_type
+		,hit_no
+		,hit_yn
+		) VALUES (
+		#{id}
+		, 'gift'
+		, #{giftNo}
+		,'Y'
+		)
+	</insert>
+
+	<update id="editHit"
+		parameterType="com.legend.conv.member.vo.MemberVO">
+		UPDATE hit
+		SET hit_yn =
+		CASE
+		WHEN hit_yn = 'Y' THEN 'N'
+		WHEN hit_yn = 'N' THEN 'Y'
+		ELSE 'N'
+		END
+		WHERE
+		hit_id = #{id}
+		AND hit_no = #{giftNo}
+		AND hit_type = 'gift'
+	</update>
+
+	<select id="checkHit"
+		parameterType="com.legend.conv.member.vo.MemberVO"
+		resultType="com.legend.conv.gift.vo.HitVO">
+		SELECT
+		hit_id,
+		hit_yn
+		FROM hit
+		WHERE hit_id = #{id}
+		AND hit_no =
+		#{giftNo}
+		and hit_type = 'gift'
+	</select>
+
+	<insert id="insertCart"
+		parameterType="com.legend.conv.gift.vo.CartVO">
+		INSERT INTO cart(
+		cart_no
+		,cart_id
+		,cart_parent_no
+		,cart_count
+		) VALUES (
+		seq_cart.nextval
+		,#{cartId}
+		,#{cartParentNo}
+		,#{cartCount}
+		)
+	</insert>
+
+	<select id="checkCart"
+		parameterType="com.legend.conv.gift.vo.CartVO" resultType="int">
+		SELECT
+		cart_count
+		FROM cart
+		WHERE cart_id = #{cartId}
+		AND cart_parent_no =
+		#{cartParentNo}
+	</select>
+
+	<update id="updateCartCount"
+		parameterType="com.legend.conv.gift.vo.CartVO">
+		UPDATE cart
+		SET cart_count = cart_count + 1
+		WHERE cart_parent_no = #{cartParentNo}
+	</update>
+
+	<delete id="deleteCart"
+		parameterType="com.legend.conv.gift.vo.CartVO">
+		DELETE FROM cart where cart_parent_no = #{cartParentNo}
+		AND cart_id = #{cartId}
+	</delete>
+
+	<update id="countCart"
+		parameterType="com.legend.conv.gift.vo.CartVO">
+		UPDATE cart
+		SET cart_count = #{cartCount}
+		WHERE cart_parent_no = #{cartParentNo}
+	</update>
+
+	<update id="countGift" parameterType="com.legend.conv.gift.vo.GiftVO">
+		UPDATE gift
+		SET gift_count = gift_count + #{giftCount}
+		WHERE gift_no = #{giftNo}
+	</update>
+
+</mapper>

@@ -1,0 +1,65 @@
+/* 부트스트랩 라인 레이아웃 적용 */
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	margin-right: -15px;
+	margin-left: -15px;
+}
+
+/* 컨테이너 높이 조정 */
+.container-fluid.pt-5 {
+	padding-top: 50px;
+	padding-bottom: 50px;
+}
+
+/* 카드 디자인 스타일 적용 */
+.card {
+	background-color: #f8f9fa;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	border: 1px solid rgba(0, 0, 0, 0.125);
+	border-radius: 10px;
+	padding: 20px;
+	margin-bottom: 20px;
+}
+
+/* 이미지 스타일 적용 */
+.card img {
+	margin-top: 20px;
+	max-height: 150px;
+	width: auto;
+}
+
+/* 타이틀 스타일 적용 */
+.card h4 {
+	font-size: 24px;
+	font-weight: bold;
+	margin-top: 20px;
+}
+
+/* 내용 스타일 적용 */
+.card p {
+	margin-top: 10px;
+}
+
+/* 미디어 쿼리를 사용하여 뷰포트 크기에 따른 반응형 레이아웃 설정 */
+@media ( max-width : 768px) {
+	.card {
+		flex: 0 0 100%;
+		max-width: 100%;
+	}
+}
+
+.testimonial-carousel {
+	display: flex;
+}
+
+.testimonial-item {
+	flex: 1;
+}
+
+hr{
+	border: none;
+    height: 1px;
+    background-color: black;
+    margin: 10px 0;
+}

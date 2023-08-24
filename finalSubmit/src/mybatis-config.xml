@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<!-- mybatis를 이용하여 VO에 리턴값을 받을때 카멜케이스 적용 ( bo_no -> boNo ) -->
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+	</settings>
+ 
+ 	<typeAliases>
+ 		<typeAlias alias="NoticeVO" type="com.legend.conv.notice.vo.NoticeVO"/>
+ 		<typeAlias alias="PagingVO" type="com.legend.conv.notice.vo.PagingVO"/>
+ 		<typeAlias alias="SearchVO" type="com.legend.conv.notice.vo.SearchVO"/>
+ 		<typeAlias alias="AttachVO" type="com.legend.conv.attach.vo.AttachVO"/>
+ 	</typeAliases>
+</configuration>

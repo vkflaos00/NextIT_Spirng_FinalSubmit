@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.legend.conv.voc.dao.IVocDAO">
+
+	<sql id="vocSearch">
+		<if test="searchWord != null and searchWord !=''">
+			<choose>
+				<when test='searchType=="ID"'>
+					and id like '%' || #{searchWord} || '%'
+				</when>
+				<when test='searchType=="MA"'>
+					and voc_mail like '%' || #{searchWord} || '%'
+				</when>
+			</choose>
+		</if>
+		<if test="searchCategory != null and searchCategory !=''">
+			and voc_category = #{searchCategory}
+		</if>
+	</sql>
+
+	<insert id="registerVOC" parameterType="VocVO">
+
+		INSERT INTO VOC
+		(
+		voc_no
+		,voc_mail
+		,voc_title
+		,voc_content
+		,voc_category
+		,voc_reg_date
+		,voc_process
+		)
+		VALUES(
+		#{vocNo}
+		,#{vocMail}
+		,#{vocTitle}
+		,#{vocContent}
+		,#{vocCategory}
+		,SYSDATE
+		,'0'
+		)
+	</insert>
+
+	<select id="selectVOC" parameterType="String" resultType="VocVO">
+		SELECT
+		voc_no
+		,voc_mail
+		,voc_title
+		,voc_content
+		,voc_category
+		,voc_reg_date
+		,voc_process
+		FROM VOC
+		WHERE 1=1
+		AND voc_mail=#{memMail}
+		ORDER BY voc_no
+	</select>
+
+	<select id="getTotalRowCount" parameterType="String"
+		resultType="int">
+		SELECT
+		COUNT(*)
+		FROM
+		VOC
+		WHERE 1=1
+		AND voc_mail = #{memMail}
+	</select>
+
+	<select id="getVocList"
+		parameterType="com.legend.conv.voc.vo.VocSearchVO"
+		resultType="com.legend.conv.voc.vo.VocVO">
+		SELECT
+		d.*
+		FROM (
+		SELECT
+		rownum as rnum
+		,c.*
+		FROM (
+		SELECT DISTINCT
+		voc_no
+		,b.id as mem_id
+		,voc_mail
+		,voc_title
+		,voc_content
+		,voc_process
+		,voc_category
+		,voc_reg_date
+		FROM voc a , member b
+		WHERE
+		a.voc_mail = b.mail
+		AND
+		voc_process in (0,1)
+		<include refid="vocSearch"></include>
+		ORDER BY mem_id desc
+		) c
+		ORDER BY rnum 
+		) d
+		<include refid="common.sql.rnum"></include>
+	</select>
+
+	<select id="getTotalProcessCount"
+		parameterType="com.legend.conv.voc.vo.VocSearchVO" resultType="int">
+		SELECT
+		COUNT(*)
+		FROM
+		VOC
+		WHERE 1=1
+		AND voc_process in (0,1)
+	</select>
+
+	<select id="getKey" resultType="String">
+		SELECT
+		'VOC-'
+		||TO_CHAR(SYSDATE, 'YYMMDD')
+		|| '-'
+		||LPAD ( (select count(voc_no)+1 from voc) , 4, '0') AS bo_no
+		FROM DUAL
+	</select>
+	
+	<select id="takePicture" parameterType="String" resultType="AttachVO">
+		SELECT 
+			ATCH_NO
+			,ATCH_PARENT_NO
+			,ATCH_CATEGORY
+			,ATCH_FILE_NAME
+			,ATCH_ORIGINAL_NAME
+			,ATCH_CONTENT_TYPE
+			,ATCH_PATH
+			,ATCH_DEL_YN
+			,ATCH_AUTHOR
+		FROM ATTACH
+		WHERE 1=1
+		AND ATCH_PARENT_NO = #{vocNo}
+		
+	</select>
+
+</mapper>

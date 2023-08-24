@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.legend.conv.card.dao.ICardDAO">
+	
+	<select id="getCardList"
+		parameterType="com.legend.conv.card.vo.CardVO"
+		resultType="com.legend.conv.card.vo.CardVO">
+		SELECT
+			card_title
+			,card_discount
+			,card_content
+			,card_notice
+			,card_src
+		FROM
+			card
+		WHERE
+			conv_type = #{convType}
+	</select>
+</mapper>

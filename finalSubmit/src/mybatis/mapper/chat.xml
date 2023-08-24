@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.legend.conv.chat.dao.IChatDAO">
+	
+	<!-- 채팅방 룸아이디 만들기 -->
+	<select id="getCreatedChatRoomId" resultType="string">
+	    SELECT 'CV-CHAT-' || REPLACE(SUBSTR(SYSDATE, 0, 8),'/','') ||'-'|| LPAD(SEQ_CHAT.NEXTVAL, 6, 0)
+	    FROM DUAL
+	</select>
+	
+	<!-- 채팅방 만들기 -->
+	<insert id="createChatRoom" parameterType="string">
+		INSERT INTO chatroom (
+		    room_id
+		    ,item_no
+		    ,created_date
+		    ,user_count
+		    ,chat_yn
+		) VALUES(
+		    #{roomId}
+		    ,#{itemNo}
+		    ,SYSDATE
+		    ,1
+		    ,'Y'
+		)
+	</insert>
+	<!-- 채팅방 유저 등록 -->
+	<insert id="addUserToChatRoom" parameterType="com.legend.conv.chat.vo.ChatUserVO">
+		INSERT INTO chatuser (
+		    user_id
+		    ,room_id
+		    ,user_name
+		) VALUES (
+		    #{userId}
+		    ,#{roomId}
+		    ,#{userName}
+		)
+	</insert>
+	
+	<!-- 채팅방 존재 유무 확인 -->
+	<select id="getChatRoomByItemNo" parameterType="string" resultType="com.legend.conv.chat.vo.ChatRoomVO">
+		SELECT 
+			room_id
+			,item_no
+			,created_date
+			,closed_date
+			,user_count
+			,chat_yn
+		FROM
+			chatroom
+		WHERE
+			item_no = #{itemNo}
+		AND chat_yn = 'Y'
+	</select>
+	
+	<!-- 채팅방 존재시 userCount 증가 -->
+	<update id="increaseUserCount" parameterType="string">
+		UPDATE chatroom
+		SET user_count = user_count + 1
+		WHERE room_id = #{roomId}
+	</update>
+	
+	<!-- chatuser 정보 삭제 -->
+	<delete id="removeUserFromChatRoom" parameterType="string">
+	DELETE
+	FROM chatuser
+	WHERE room_id = #{roomId}
+	AND user_id = #{userId}
+	</delete>
+	
+	<!-- 채팅방 나갈 시 userCount 감소 -->
+	<update id="decreaseUserCount" parameterType="string">
+		UPDATE chatroom
+		SET user_count = user_count - 1
+		WHERE room_id = #{roomId}
+	</update>
+	
+	<!-- 채팅방 인원 0명일 때 chat_yn 변경 -->
+	<update id="updateChatYn" parameterType="string">
+		UPDATE chatroom
+		SET chat_yn = 'N'
+		WHERE room_id = #{roomId}
+	</update>
+	
+	<!-- 현재 채팅방인원 확인하는 쿼리 -->
+	<select id="getUserCount" parameterType="string" resultType="int">
+		SELECT user_count
+		FROM chatroom
+		WHERE room_id = #{roomId}
+	</select>
+	
+</mapper>

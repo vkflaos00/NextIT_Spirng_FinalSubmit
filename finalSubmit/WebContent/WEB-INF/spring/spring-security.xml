@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-5.3.xsd
+		http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.3.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	 
+	 <!-- security -->
+	 <!-- Root Context: defines shared resources visible to all other web components -->
+	 <bean id="PasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"></bean>
+	
+	<!-- rememberMe -->
+	<!-- <bean id="rememberMeServices" class="org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices">
+	    <property name="userDetailsService" ref="customUserDetailsService" /> customUserDetailsService는 UserDetailsService의 구현체
+	    <property name="key" value="uniqueRememberMeKey" /> remember me 쿠키에 사용할 고유한 키
+	</bean>
+	 -->
+	<!-- <bean id="rememberMeFilter" class="org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter">
+	    <property name="rememberMeServices" ref="rememberMeServices" />
+	    <property name="authenticationManager" ref="authenticationManager" />
+	    <property name="order" value="101"/>
+	</bean> -->
+	
+	<!-- <bean id="uniqueRememberMeKey" class="java.lang.String">
+	    <constructor-arg value="YourUniqueRememberMeKeyHere" />
+	</bean> -->
+	
+	<!-- security="none"을 사용하여 제외하고자 하는 패턴 -->
+	<!-- <security:http pattern="/images/**" security="none"/>
+	<security:http pattern="/css/**" security="none"/>
+	<security:http pattern="/member/memberRegister" security="none"/>
+	<security:http pattern="/member/profilePhoto" security="none"/> -->
+		
+	<!-- 해당 패턴에 대한 권한 체크 -->	
+    <!-- <security:http>
+        <security:intercept-url pattern="/member/**" access="hasRole('ROLE_ADMIN')" />
+		<security:intercept-url pattern="/free/**" access="hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN')" />
+		<security:intercept-url pattern="/home" access="hasAnyRole('ROLE_USER','ROLE_MANAGER','ROLE_ADMIN')" />
+		<security:intercept-url pattern="/**" access="permitAll" />
+        <security:form-login />
+        <security:logout />
+        <security:access-denied-handler error-page="/common/error/error403.jsp"/>
+    </security:http> -->
+    
+    <!-- 사용자 권한 설정 -->
+   <!--  <security:authentication-manager>
+        <security:authentication-provider>
+            <security:user-service>
+                <security:user name="nextit11" password="$2a$10$rq/PHHonTmDjAE2ke3NweuOh25WoxiwXS9IlhsTpx9UqmFIjdBWqa" authorities="ROLE_USER" />
+				<security:user name="nextit12" password="$2a$10$rq/PHHonTmDjAE2ke3NweuOh25WoxiwXS9IlhsTpx9UqmFIjdBWqa" authorities="ROLE_USER, ROLE_MANAGER"/>
+				<security:user name="nextit13" password="$2a$10$rq/PHHonTmDjAE2ke3NweuOh25WoxiwXS9IlhsTpx9UqmFIjdBWqa" authorities="ROLE_USER, ROLE_MANAGER, ROLE_ADMIN" />
+            </security:user-service>
+			<security:password-encoder ref="passwordEncoder" />
+        </security:authentication-provider>
+    </security:authentication-manager> -->
+
+ <!--
+	- 제외하고자 하는 url은 security="none"을 사용하여 필터에 검색되는것을 제외할수 있다.
+	- hasAnyRole()은 설정된 권한에서 어느 권한이라도 있으면 패스된다.
+	- hasRole()은 해당 권한이 있어야 한다.
+		hasRole("ADMIN") 이라고 작성시 userDetailsService 에서 Authority 를 가져와서 확인할 때 
+			자동으로 ROLE 이라는 접두어를 붙어서 확인한다.
+			 
+	- permitAll은 해당 패턴에 대해서 모두 허용한다.
+	- 패턴은 위에서 부터 아래로 적용되어진다.
+	- security:form-login 태그에 아무런 설정이 없으면 스프링이 제공하는 로그인 페이지를 사용하게된다
+	- security:logout는 스프링이 제공하는 로그아웃을 사용하게 된다.
+	- access-denied-handler 권한이 없는 사용자로부터 요청이 들어왔을때 error-page를 설정할 수 있다. 
+-->
+<bean id="customUserDetailsService" class="com.legend.conv.common.security.CustomUserDetailsService"></bean>
+
+<security:http pattern="/img/**" security="none"/>
+<security:http pattern="/css/**" security="none"/>
+<security:http pattern="/js/**" security="none"/>
+<security:http pattern="/lib/**" security="none"/>
+<security:http pattern="/member/memberRegister" security="none"/>
+<security:http pattern="/member/profilePhoto" security="none"/>
+
+<security:http auto-config="true">
+	<security:intercept-url pattern="/member/memberRole" access="hasAuthority('ROLE_ADMIN')" />
+	<security:intercept-url pattern="/member/memberRoleUpdate" access="hasAuthority('ROLE_ADMIN')" />
+	<security:intercept-url pattern="/member/memberList" access="hasAuthority('ROLE_ADMIN')" />
+	<security:intercept-url pattern="/member/memberMultiDelete" access="hasAuthority('ROLE_ADMIN')" />
+	<security:intercept-url pattern="/member/**" access="hasAuthority('ROLE_ADMIN')" />
+	<security:intercept-url pattern="/free/**" access="hasAnyAuthority('ROLE_USER','ROLE_ADMIN')" />
+	<security:intercept-url pattern="/home" access="permitAll" /> 
+	<security:intercept-url pattern="/**" access="permitAll" />
+	
+	<security:form-login
+		login-page="/login"
+		login-processing-url="/login/loginDo"      
+		default-target-url="/"
+		username-parameter="id"
+		password-parameter="pw"
+		authentication-failure-url="/login/fail"
+	/>
+	<security:logout 
+		logout-url="/logout" 
+		logout-success-url="/" 
+		delete-cookies="JSESSIONID"	
+	/>
+	<security:csrf disabled="true" />
+	
+	<!-- 스프링 시큐리티는 기본적으로 iframe을 차단합니다. 따라서 ifram 차단 해제하기 -->
+	<security:headers>
+		<security:frame-options disabled="true"/>
+	</security:headers>
+ 	<!-- 기타 보안 설정 -->
+ 	<!-- <security:remember-me key="uniqueRememberMeKey" user-service-ref="customUserDetailsService" /> -->
+ 
+</security:http>
+
+<security:authentication-manager>
+	<security:authentication-provider user-service-ref="customUserDetailsService">
+		<security:password-encoder ref="PasswordEncoder" />			
+	</security:authentication-provider>
+</security:authentication-manager>
+<!--참고
+	hasAuthority() or hasAnyAuthority() : 특정 권한을 가지는 사용자만 접근할 수 있다.
+	login-page="/login"
+		-> 시큐리티에서 제공하는 로그인 페이지가 아닌 플젝에서 사용하는 로그인 페이지로 설정
+	login-processing-url="/login/loginCheck" 
+		-> /login/loginCheck 요청이 발생하면 스프링시큐리티가 해당 요청을 가로채서 수행함   
+			(즉, /login/loginCheck 요청은 실행되지 않음)
+	default-target-url="/home"
+		-> 사용자가 로그인 성공시 기본적으로 요청되는 url
+	username-parameter="memId"
+		-> 사용자 아이디 전달되는 값은 로그인 폼에서 지정한 memId
+	password-parameter="memPass"
+		-> 사용자 패스워드 전달되는 값은 로그인 폼에서 지정한 memPass
+	authentication-failure-url="/login/fail"
+		-> 사용자가 로그인 실패시 요청되어지는 url		
+	logout-url="/logout" 
+		-> 로그아웃 처리될 url	
+	logout-success-url="/login" 
+		-> 로그아웃 성공하면 리다이렉트 될 url
+	delete-cookies="JSESSIONID"	
+		-> 로그아웃 성공하면 JSESSIONID 쿠키제거
+		
+	<security:csrf disabled="true" />
+		-> 	csrf 사용하지 않음을 나타내는 옵션(사용하는것을 권장하지만 수업에서는 사용하지 않음)
+	
+	user-service-ref
+		-> 사용자 인증을 커스텀하여 처리 하고자할때 해당 커스텀 빈 등록	 
+-->
+	 
+	 
+</beans>
